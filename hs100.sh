@@ -1,5 +1,16 @@
 #!/bin/bash
 
+INFLUXDB_IP="localhost"
+INFLUXDB_PORT="8086"
+INFLUXDB_DB="tplink"
+INFLUXDB_USER="admin"
+INFLUXDB_PASSWORD="admin"
+INFLUXDB_TEMP_STATUS_FILE="/tmp/hs100-status.json"
+INFLUXDB_TEMP_EMETER_FILE="/tmp/hs100-emeter.json"
+
+
+
+
 set -o errexit
 
 (( "$DEBUG" )) && set -o xtrace
@@ -206,6 +217,9 @@ cmd_discover(){
     myip="`${here}/myip.sh`"
     subnet=$(echo $myip | egrep -o '([0-9]{1,3}\.){3}')
     subnet=${subnet}0-255
+	if [ X$plugs != "X" ]; then 
+	    subnet=${plugs}
+	fi 
     declare -a hs100ip
     hs100ip=( $(nmap -Pn -p ${port} --open ${subnet} \
                 | grep 'Nmap scan report for' \
@@ -275,6 +289,18 @@ cmd_print_plug_consumption(){
    query_plug "$payload_emeter"
 }
 
+cmd_print_plug_consumption_influxdb(){
+   query_plug "$payload_query" > $INFLUXDB_TEMP_STATUS_FILE
+   query_plug "$payload_emeter" > $INFLUXDB_TEMP_EMETER_FILE
+   ALIAS=$( $( which jq ) -r .system.get_sysinfo.alias $INFLUXDB_TEMP_STATUS_FILE)
+   CURRENT=$( $( which jq ) .emeter.get_realtime.current $INFLUXDB_TEMP_EMETER_FILE )
+   ERR_CODE=$( $( which jq ) .emeter.get_realtime.err_code $INFLUXDB_TEMP_EMETER_FILE )
+   POWER=$( $( which jq ) .emeter.get_realtime.power $INFLUXDB_TEMP_EMETER_FILE )
+   TOTAL=$( $( which jq ) .emeter.get_realtime.total $INFLUXDB_TEMP_EMETER_FILE )
+   VOLTAGE=$( $( which jq ) .emeter.get_realtime.voltage $INFLUXDB_TEMP_EMETER_FILE )
+   curl --silent --output /dev/null -i -XPOST http://$INFLUXDB_IP:$INFLUXDB_PORT/write?db=$INFLUXDB_DB -u $INFLUXDB_USER:$INFLUXDB_PASSWORD --data-binary ""$ALIAS",alias="$ALIAS" current="$CURRENT",err_code="$ERR_CODE",power="$POWER",total="$TOTAL",voltage="$VOLTAGE"" || echo "Failed to inject into Influxdb"
+}
+
 cmd_switch_on(){
    check_arg "ip" $plugs
    check_arg "port" $port
@@ -293,7 +319,7 @@ cmd_switch_off(){
    done
 }
 
-commands=" on off check status emeter discover list "
+commands=" on off check status emeter emeter_influxdb discover list "
 
 # run the Main progamme, if we are not being sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -340,6 +366,7 @@ case "$cmd" in
   check)    cmd_print_plug_relay_state;;
   status)   cmd_print_plug_status;;
   emeter)   cmd_print_plug_consumption;;
+  emeter_influxdb)   cmd_print_plug_consumption_influxdb;;
   *)        usage;;
 esac
 

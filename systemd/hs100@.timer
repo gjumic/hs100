@@ -2,8 +2,9 @@
 Description=Periodic checking of %I status
 
 [Timer]
-OnUnitActiveSec=2min
+OnUnitActiveSec=5s
+AccuracySec=1
+OnBootSec=10s
 
 [Install]
 WantedBy=hs100@%i.service
-

@@ -3,7 +3,7 @@ Description=HS100 Smart Plug by Tp-Link (instance %I)
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/hs100 -i %i check
-User=philip
+ExecStart=/root/hs100/hs100.sh -i %i emeter_influxdb
+User=root
 Group=systemd-journal
 

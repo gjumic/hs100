@@ -1,14 +1,7 @@
 #!/bin/bash
 
-INFLUXDB_IP="localhost"
-INFLUXDB_PORT="8086"
-INFLUXDB_DB="tplink"
-INFLUXDB_USER="admin"
-INFLUXDB_PASSWORD="admin"
-INFLUXDB_TEMP_STATUS_FILE="/tmp/hs100-status.json"
-INFLUXDB_TEMP_EMETER_FILE="/tmp/hs100-emeter.json"
-
-
+SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+source $SCRIPTPATH/influxdb.config
 
 
 set -o errexit
@@ -290,14 +283,23 @@ cmd_print_plug_consumption(){
 }
 
 cmd_print_plug_consumption_influxdb(){
-   query_plug "$payload_query" > $INFLUXDB_TEMP_STATUS_FILE
-   query_plug "$payload_emeter" > $INFLUXDB_TEMP_EMETER_FILE
-   ALIAS=$( $( which jq ) -r .system.get_sysinfo.alias $INFLUXDB_TEMP_STATUS_FILE)
-   CURRENT=$( $( which jq ) .emeter.get_realtime.current $INFLUXDB_TEMP_EMETER_FILE )
-   ERR_CODE=$( $( which jq ) .emeter.get_realtime.err_code $INFLUXDB_TEMP_EMETER_FILE )
-   POWER=$( $( which jq ) .emeter.get_realtime.power $INFLUXDB_TEMP_EMETER_FILE )
-   TOTAL=$( $( which jq ) .emeter.get_realtime.total $INFLUXDB_TEMP_EMETER_FILE )
-   VOLTAGE=$( $( which jq ) .emeter.get_realtime.voltage $INFLUXDB_TEMP_EMETER_FILE )
+   check_dependency jq \
+       "The jq to parse json output isn't"\
+       "in the path, injection to influxdb will fail."
+   for ip in ${plugs[@]}
+   do
+      if [ ! -f $INFLUXDB_TEMP_STATUS_FILE-$ip ]; then
+         query_plug "$payload_query" > $INFLUXDB_TEMP_STATUS_FILE-$ip
+      fi
+   query_plug "$payload_emeter" > $INFLUXDB_TEMP_EMETER_FILE-$ip
+   done
+
+   ALIAS=$( $( which jq ) -r .system.get_sysinfo.alias $INFLUXDB_TEMP_STATUS_FILE-$ip) 
+   CURRENT=$( $( which jq ) .emeter.get_realtime.current $INFLUXDB_TEMP_EMETER_FILE-$ip )
+   ERR_CODE=$( $( which jq ) .emeter.get_realtime.err_code $INFLUXDB_TEMP_EMETER_FILE-$ip )
+   POWER=$( $( which jq ) .emeter.get_realtime.power $INFLUXDB_TEMP_EMETER_FILE-$ip )
+   TOTAL=$( $( which jq ) .emeter.get_realtime.total $INFLUXDB_TEMP_EMETER_FILE-$ip )
+   VOLTAGE=$( $( which jq ) .emeter.get_realtime.voltage $INFLUXDB_TEMP_EMETER_FILE-$ip )
    curl --silent --output /dev/null -i -XPOST http://$INFLUXDB_IP:$INFLUXDB_PORT/write?db=$INFLUXDB_DB -u $INFLUXDB_USER:$INFLUXDB_PASSWORD --data-binary ""$ALIAS",alias="$ALIAS" current="$CURRENT",err_code="$ERR_CODE",power="$POWER",total="$TOTAL",voltage="$VOLTAGE"" || echo "Failed to inject into Influxdb"
 }
 

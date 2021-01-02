@@ -546,7 +546,7 @@
               }
             ]
           },
-          "unit": "kwatth"
+          "unit": "watth"
         },
         "overrides": []
       },
@@ -631,7 +631,7 @@
               }
             ]
           },
-          "unit": "kwatth"
+          "unit": "watth"
         },
         "overrides": []
       },
@@ -1351,5 +1351,5 @@
   "timezone": "",
   "title": "TPlink",
   "uid": "1cf2Yrigk",
-  "version": 18
+  "version": 19
 }

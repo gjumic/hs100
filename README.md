@@ -117,4 +117,4 @@ This is the end result:
 [![](https://github.com/gjumic/hs100/raw/master/screenshots/screenshot1.PNG)](https://github.com/gjumic/hs100/raw/master/screenshots/screenshot1.PNG)
 [![](https://github.com/gjumic/hs100/raw/master/screenshots/screenshot2.PNG)](http://https://github.com/gjumic/hs100/raw/master/screenshots/screenshot2.PNG)
 
-Not that I had only 1 smart plug so more testing is needed with multiple ones.
+Note that I had only 1 smart plug so more testing is needed with multiple ones.

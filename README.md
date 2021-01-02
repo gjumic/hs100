@@ -1,4 +1,5 @@
-tp-link Wi-Fi Smart Plug HS100
+
+TP-Link Wi-Fi Smart Plug HS100 & HS110 Monitor and Controller
 ============
 
 ## About

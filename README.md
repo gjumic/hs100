@@ -73,6 +73,23 @@ Each smart plug should be each own measurement.
 
 3. Import hs100-grafana.json to the Grafana via Web Gui
 
+Script is also compatible with Telegraf
+
+1. Append to your telegraf.conf file (usually located in /etc/telegraf/telegraf.conf)
+ 
+```sh
+[[inputs.exec]]
+# Command to execute.
+commands = ["/root/hs100/hs100.sh -i <IP ADDRESS> emeter"]
+# Command execution interval.
+interval = "5s"
+# Measurement name for InfluxDB (always use mFi- prefix for mPower mFi plug and hs110- for TpLink HS110 Smart Plug.
+name_override = "hs110-HomeOffice"
+# Do not change this.
+```
+If you have multiple smart plugs, just append same snippet again with different ip address and name_override variable.
+You can find Grafana dashboard which is compatible with Telegraf and different brands of smart plugs on my other repository at: https://github.com/gjumic/ubnt-mpower-mfi
+
 You can also add the script to the systemd so InfluxDB injection is executed every n time
 
 1.  Edit systemd/hs100@.service file to fit your needs (path to script and user)
